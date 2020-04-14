@@ -3,8 +3,6 @@
  */
 
 #include <assert.h>
-#include <limits.h>
-#include <math.h>
 
 #define LENGTH 2000000
 
@@ -43,14 +41,14 @@ int main(void) {
 }
 
 int binary_search(int x, int v[], int n) {
-    int low = 0, high = n - 1, mid = floor((low + high) / 2);
+    int low = 0, high = n - 1, mid = (low + high) / 2;
 
     while (low <= high) {
         if (x < v[mid])
             high = mid - 1;
         else
             low = mid + 1;
-        mid = floor((low + high) / 2);
+        mid = (low + high) / 2;
     }
 
     if (x == v[mid]) return mid;
