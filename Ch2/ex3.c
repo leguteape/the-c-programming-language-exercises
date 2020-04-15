@@ -7,8 +7,6 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#include "include/strutils.h"
-
 /*
  * NAME: htoi
  * PURPOSE: Function to convert a string of
