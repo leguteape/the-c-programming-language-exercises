@@ -42,15 +42,12 @@ char *trim(char *s) {
 }
 
 int get_line(char s[], int lim) {
-    int len, c;
+    int c;
+    int index = 0;
 
-    for (len = 0; len < lim - 1 && (c = getchar()) != EOF && c != '\n'; ++len)
-        s[len] = c;
-    if (c == '\n') {
-        s[len] = c;
-        ++len;
-    }
-    s[len] = '\0';
+    while (--lim > 0 && (c = getchar()) != EOF && c != '\n') s[index++] = c;
+    if (c == '\n') s[index++] = c;
+    s[index] = '\0';
 
-    return len;
+    return index;
 }
