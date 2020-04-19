@@ -139,8 +139,14 @@ int main(void) {
     boolean error = FALSE;
     char strbuf[MAX_OP_LEN];
 
-    while (!error && (token = get_token(strbuf)) != EOF) {
+    while ((token = get_token(strbuf)) != EOF) {
         double op2;
+
+        if (error) {
+            if (token == '\n')
+                error = FALSE;
+            continue;
+        }
 
         switch (token) {
         case NUMBER_FOUND:
@@ -319,9 +325,6 @@ void var_stackclear(void) { vsp = -1; }
 
 /* get_token */
 
-#include <ctype.h>
-#include <string.h>
-
 #define FUNC_BUF_SIZE 10
 
 /*
@@ -371,6 +374,9 @@ void get_operand(char buffer[], int curr_index);
  */
 int get_var_name(char buffer[]);
 
+#include <ctype.h>
+#include <string.h>
+
 int get_token(char s[]) {
     int c, i;
 
@@ -382,11 +388,13 @@ int get_token(char s[]) {
     /* Check for operator */
     if (!isdigit(c) && c != '.') {
         if (c == '$') {
+            int vstatus;
+
             /* '$' is used for variable expansion (like in the shell) */
             if (isalpha(s[++i] = c = getch())) {
                 ungetch(c);
-                if (get_var_name(s) != INVALID_VAR_USAGE)
-                    return VAR_EXPAND_FOUND;
+                if ((vstatus = get_var_name(s)) != INVALID_VAR_USAGE)
+                    return vstatus;
             }
         } else if (isalpha(c)) {
             int ftype;
@@ -466,23 +474,20 @@ int get_var_name(char s[]) {
     int c;
     int i = 0;
 
-    while (i < 3 && isalpha(s[i++] = c = getch()))
+    while (isalpha(s[i++] = c = getch()))
         ;
-    s[i] = '\0';
+    s[i - 1] = '\0';
     ungetch(c);
 
-    if (i == 1)
+    if (i - 1 == 1)
         return VAR_EXPAND_FOUND;
-    else if (i == 3) {
-        if (s[0] == 'a' && s[1] == 'n' && s[2] == 's')
-            return ANS_EXPAND_FOUND;
-        else {
-            for (i = 0; s[i] != '\0'; i++)
-                ungetch(s[i]);
-            return INVALID_VAR_USAGE;
-        }
-    } else
+    else if (strcmp(s, "ans") == 0)
+        return ANS_EXPAND_FOUND;
+    else {
+        for (i = 0; s[i] != '\0'; i++)
+            ungetch(s[i]);
         return INVALID_VAR_USAGE;
+    }
 }
 
 /* buffer */
