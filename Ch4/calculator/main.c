@@ -8,13 +8,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Error codes */
+#define INVALID_VAR_USAGE '4'
+#define VAR_STACK_EMPTY '\0'
+
 #define MAX_OP_LEN 100
 #define STORAGE_MAXLEN 25
 #define NUMBER_FOUND '0'
 #define VAR_ASSIGN_FOUND '1'
 #define VAR_EXPAND_FOUND '2'
 #define ANS_EXPAND_FOUND '3'
-#define INVALID_VAR_USAGE '4'
 #define NO_FUNC_FOUND '5'
 #define SIN_FOUND '6'
 #define COS_FOUND '7'
@@ -139,13 +142,14 @@ boolean var_instack(char to_find);
 void var_stackclear(void);
 
 int main(void) {
-    int token;
     boolean error = FALSE;
+    int token, var;
     char strbuf[MAX_OP_LEN];
 
     while ((token = get_token(strbuf)) != EOF) {
         double op2;
 
+        /* Skip the rest of an erroneous line */
         if (error) {
             if (token == '\n')
                 error = FALSE;
@@ -216,7 +220,11 @@ int main(void) {
             var_push(strbuf[0]);
             break;
         case '=':
-            op_push(storage[var_stacktop() - 'a'] = op_pop());
+            if ((var = var_stacktop()) == VAR_STACK_EMPTY) {
+                error = TRUE;
+                printf("calculator: error: Invalid assignment expression\n");
+            } else
+                op_push(storage[var - 'a'] = op_pop());
             break;
         case '\n':
             printf("\t%.8g\n", (ans = op_pop()));
@@ -299,7 +307,7 @@ void var_push(char v) {
 char var_pop(void) {
     if (vsp < 0) {
         printf("var_pop: error: Stack underflow\n");
-        return 0.0;
+        return VAR_STACK_EMPTY;
     } else
         return vars[vsp--];
 }
@@ -307,7 +315,7 @@ char var_pop(void) {
 char var_stacktop(void) {
     if (vsp < 0) {
         printf("var_stacktop: error: Stack is empty\n");
-        return '\0';
+        return VAR_STACK_EMPTY;
     } else
         return vars[vsp];
 }
@@ -405,13 +413,17 @@ int get_token(char s[]) {
     /* Check for operator */
     if (!isdigit(c) && c != '.') {
         if (c == '$') {
-            int vstatus;
-
             /* '$' is used for variable expansion (like in the shell) */
             if (isalpha(s[++i] = c = getch())) {
+                /* Put back the last character and return */
                 ungetch(c);
-                if ((vstatus = get_var_name(s)) != INVALID_VAR_USAGE)
-                    return vstatus;
+                return get_var_name(s);
+            } else {
+                /* Handle missing variable name error during expansion */
+                s[i] = '\0'; /* Terminate the string buffer */
+                /* Put back the last character and return */
+                ungetch(c);
+                return INVALID_VAR_USAGE;
             }
         } else if (isalpha(c)) {
             int ftype;
@@ -420,7 +432,7 @@ int get_token(char s[]) {
             if ((ftype = get_function(s)) != NO_FUNC_FOUND)
                 return ftype;
             /* Handle errors related to invalid variable use */
-            while ((c = getch()) == ' ' || c == '\t')
+            while (isalnum(c = getch()) || c == ' ' || c == '\t')
                 if ((c = getch()) != '=') {
                     /* If first non-whitespace token is not '=', error */
                     ungetch(c);
@@ -503,6 +515,7 @@ int get_var_name(char s[]) {
     else {
         for (i = 0; s[i] != '\0'; i++)
             ungetch(s[i]);
+        printf("%s\n", s);
         return INVALID_VAR_USAGE;
     }
 }
@@ -512,20 +525,28 @@ int get_var_name(char s[]) {
 #define BUFSIZE 100
 
 /* Push back implementation for 'getch' and 'ungetch' */
-char pushback_char;
+char pushed_char;
 boolean pushback = FALSE;
 
 /* Push back implementation for 'ungets' */
 char buffer[BUFSIZE];
 int bufp = 0;
 
-int getch(void) { return (pushback) ? pushback_char : getchar(); }
+int getch(void) {
+    if (pushback) {
+        pushback = FALSE;
+        return pushed_char;
+    }
+    return getchar();
+}
 
 void ungetch(int ch) {
     if (pushback)
         printf("ungetch: error: Buffer overflow\n");
-    else
-        pushback_char = ch;
+    else {
+        pushback = TRUE;
+        pushed_char = ch;
+    }
 }
 
 void ungets(char s[]) {
