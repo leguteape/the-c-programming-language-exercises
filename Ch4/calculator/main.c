@@ -511,17 +511,21 @@ int get_var_name(char s[]) {
 
 #define BUFSIZE 100
 
-char buffer[BUFSIZE];
-int bufp = 0; /* Points at index of buffer where new char is inserted */
+/* Push back implementation for 'getch' and 'ungetch' */
+char pushback_char;
+boolean pushback = FALSE;
 
-int getch(void) { return (bufp > 0) ? buffer[--bufp] : getchar(); }
+/* Push back implementation for 'ungets' */
+char buffer[BUFSIZE];
+int bufp = 0;
+
+int getch(void) { return (pushback) ? pushback_char : getchar(); }
 
 void ungetch(int ch) {
-    if (bufp >= BUFSIZE)
+    if (pushback)
         printf("ungetch: error: Buffer overflow\n");
     else
-        buffer[bufp++] = ch;
-    printf("Buf len = %d\n", bufp);
+        pushback_char = ch;
 }
 
 void ungets(char s[]) {
