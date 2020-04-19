@@ -9,133 +9,205 @@
 #include <stdlib.h>
 
 #define MAX_OP_LEN 100
+#define STORAGE_MAXLEN 25
 #define NUMBER_FOUND '0'
-#define VARIABLE_FOUND '1'
-#define NO_FUNC_FOUND '2'
-#define SIN_FOUND '3'
-#define COS_FOUND '4'
+#define VAR_ASSIGN_FOUND '1'
+#define VAR_EXPAND_FOUND '2'
+#define INVALID_VAR_USAGE '3'
+#define NO_FUNC_FOUND '4'
+#define SIN_FOUND '5'
+#define COS_FOUND '6'
+#define EXP_FOUND '7'
 
 typedef enum { FALSE, TRUE } boolean;
 
+/* The array to store values of variables */
+double storage[STORAGE_MAXLEN];
+
 /*
- * NAME: getop
+ * NAME: get_token
  * PURPOSE: To fetch an operator char directly or an operand in the buffer.
  * PARAMETERS:
  *  - char buffer[]: The buffer used to hold an operand
  * RETURNS: Either the operator itself, or a signal to indicate an operand.
  */
-int getop(char buffer[]);
+int get_token(char buffer[]);
 
 /*
- * NAME: push
+ * NAME: op_push
  * PURPOSE: To push a new element onto the top of the stack.
  * PARAMETERS:
  *  - double number: The number to push
  * RETURNS: Nothing.
  */
-void push(double number);
+void op_push(double number);
 
 /*
- * NAME: pop
+ * NAME: op_pop
  * PURPOSE: To pop out and return the topmost element from the stack.
  * PARAMETERS:
  *  - void
  * RETURNS: The topmost element of the stack.
  */
-double pop(void);
+double op_pop(void);
 
 /*
- * NAME: stacktop
+ * NAME: op_stacktop
  * PURPOSE: To return the topmost element from the stack without popping it.
  * PARAMETERS:
  *  - void
  * RETURNS: The topmost element of the stack.
  */
-double stacktop(void);
+double op_stacktop(void);
 
 /*
- * NAME: stackdup
+ * NAME: op_stackdup
  * PURPOSE: To push the top element onto the top of the stack again.
  * PARAMETERS:
  *  - void
  * RETURNS: Nothing.
  */
-void stackdup(void);
+void op_stackdup(void);
 
 /*
- * NAME: stackswap
+ * NAME: op_stackswap
  * PURPOSE: To swap the top two elements of a stack.
  * PARAMETERS:
  *  - void
  * RETURNS: Nothing.
  */
-void stackswap(void);
+void op_stackswap(void);
 
 /*
- * NAME: clear
+ * NAME: op_clear
  * PURPOSE: To clear the stack.
  * PARAMETERS:
  *  - void
  * RETURNS: Nothing.
  */
-void stackclear(void);
+void op_stackclear(void);
+/*
+ * NAME: var_push
+ * PURPOSE: To push a new element onto the top of the stack.
+ * PARAMETERS:
+ *  - char number: The number to push
+ * RETURNS: Nothing.
+ */
+void var_push(char variable);
+
+/*
+ * NAME: var_pop
+ * PURPOSE: To pop out and return the topmost element from the stack.
+ * PARAMETERS:
+ *  - void
+ * RETURNS: The topmost element of the stack.
+ */
+char var_pop(void);
+
+/*
+ * NAME: var_stacktop
+ * PURPOSE: To return the topmost element from the stack without popping it.
+ * PARAMETERS:
+ *  - void
+ * RETURNS: The topmost element of the stack.
+ */
+char var_stacktop(void);
+
+/*
+ * NAME: var_instack
+ * PURPOSE: To check if an item is in the vars stack.
+ * PARAMETERS:
+ *  - char to_find: The character to look for
+ * RETURNS: TRUE or FALSE depending on presence of char in stack.
+ */
+boolean var_instack(char to_find);
+
+/*
+ * NAME: var_clear
+ * PURPOSE: To clear the stack.
+ * PARAMETERS:
+ *  - void
+ * RETURNS: Nothing.
+ */
+void var_stackclear(void);
 
 int main(void) {
-    int optype;
-    char str[MAX_OP_LEN];
+    int token;
+    boolean error = FALSE;
+    char strbuf[MAX_OP_LEN];
 
-    while ((optype = getop(str)) != EOF) {
+    while (!error && (token = get_token(strbuf)) != EOF) {
         double op2;
 
-        switch (optype) {
+        switch (token) {
         case NUMBER_FOUND:
-            push(atof(str));
+            op_push(atof(strbuf));
             break;
-        case VARIABLE_FOUND:
-            printf("A Variable\n");
+        case VAR_EXPAND_FOUND:
+            /* During expansion, 'strbuf' holds a single letter variable */
+            if (var_instack(strbuf[0]))
+                op_push(storage[strbuf[0] - 'a']);
+            else {
+                printf("calculator: error: "
+                       "Use of undefined variable '%s'\n",
+                       strbuf);
+                error = TRUE;
+            }
             break;
         case SIN_FOUND:
-            push(sin(pop()));
+            op_push(sin(op_pop()));
             break;
         case COS_FOUND:
-            push(cos(pop()));
+            op_push(cos(op_pop()));
             break;
-        case '+':
-            push(pop() + pop());
-            break;
-        case '-':
-            op2 = pop();
-            push(pop() - op2);
-            break;
-        case '*':
-            push(pop() * pop());
-            break;
-        case '/':
-            op2 = pop();
-            if (op2 != 0.0)
-                push(pop() / op2);
-            else
-                printf("calculator: Zero divisor\n");
-            break;
-        case '%':
-            op2 = pop();
-            if (op2 != 0.0)
-                push((int)pop() % (int)op2);
-            else
-                printf("calculator: Zero divisor\n");
+        case EXP_FOUND:
+            op_push(exp(op_pop()));
             break;
         case '^':
-            op2 = pop();
-            push(pow(pop(), op2));
+            op2 = op_pop();
+            op_push(pow(op_pop(), op2));
             break;
-        case 'e':
-            push(exp(pop()));
+        case '*':
+            op_push(op_pop() * op_pop());
+            break;
+        case '/':
+            op2 = op_pop();
+            if (op2 != 0.0)
+                op_push(op_pop() / op2);
+            else {
+                printf("calculator: Zero divisor\n");
+                error = TRUE;
+            }
+            break;
+        case '%':
+            op2 = op_pop();
+            if (op2 != 0.0)
+                op_push((int)op_pop() % (int)op2);
+            else {
+                printf("calculator: Zero divisor\n");
+                error = TRUE;
+            }
+            break;
+        case '+':
+            op_push(op_pop() + op_pop());
+            break;
+        case '-':
+            op2 = op_pop();
+            op_push(op_pop() - op2);
+            break;
+        case VAR_ASSIGN_FOUND:
+            /* For single letter variables only */
+            var_push(strbuf[0]);
+            break;
+        case '=':
+            op_push(storage[var_stacktop() - 'a'] = op_pop());
             break;
         case '\n':
-            printf("\t%.8g\n", pop());
+            printf("\t%.8g\n", op_pop());
             break;
         default:
-            printf("calculator: Unknown command '%s'\n", str);
+            printf("calculator: Unknown command '%s'\n", strbuf);
+            error = TRUE;
             break;
         }
     }
@@ -145,60 +217,101 @@ int main(void) {
 
 /* stack */
 
-#define VAL_MAX_DEPTH 100
+#define OPERANDS_MAX_DEPTH 100
+#define VARS_MAX_DEPTH 100
 
-int sp = -1; /* -1 indicates empty stack */
-double val[VAL_MAX_DEPTH];
+int osp = -1; /* -1 indicates empty stack */
+int vsp = -1;
+double operands[OPERANDS_MAX_DEPTH];
+char vars[VARS_MAX_DEPTH];
 
-void push(double f) {
-    if (sp >= VAL_MAX_DEPTH - 1)
-        printf("push: error: Stack overflow\n");
+void op_push(double f) {
+    if (osp >= OPERANDS_MAX_DEPTH - 1)
+        printf("op_push: error: Stack overflow\n");
     else
-        val[++sp] = f;
+        operands[++osp] = f;
 }
 
-double pop(void) {
-    if (sp < 0) {
-        printf("pop: error: Stack underflow\n");
+double op_pop(void) {
+    if (osp < 0) {
+        printf("op_pop: error: Stack underflow\n");
         return 0.0;
     } else
-        return val[sp--];
+        return operands[osp--];
 }
 
-double stacktop(void) {
-    if (sp < 0) {
-        printf("stacktop: error: Stack is empty\n");
+double op_stacktop(void) {
+    if (osp < 0) {
+        printf("op_stacktop: error: Stack is empty\n");
         return 0.0;
     } else
-        return val[sp];
+        return operands[osp];
 }
 
-void stackdup(void) {
-    if (sp < 0)
-        printf("stackdup: error: Stack is empty\n");
-    else if (sp >= VAL_MAX_DEPTH - 1)
-        printf("stackdup: error: Stack overflow\n");
+void op_stackdup(void) {
+    if (osp < 0)
+        printf("op_stackdup: error: Stack is empty\n");
+    else if (osp >= OPERANDS_MAX_DEPTH - 1)
+        printf("op_stackdup: error: Stack overflow\n");
     else {
-        val[sp + 1] = val[sp];
-        ++sp;
+        operands[osp + 1] = operands[osp];
+        ++osp;
     }
 }
 
-void stackswap(void) {
+void op_stackswap(void) {
     double top;
 
-    if (sp <= 0)
-        printf("stackswap: error: Stack doesn't contain enough items\n");
+    if (osp <= 0)
+        printf("op_stackswap: error: Stack doesn't contain enough items\n");
     else {
-        top = val[sp];
-        val[sp] = val[sp - 1];
-        val[sp - 1] = top;
+        top = operands[osp];
+        operands[osp] = operands[osp - 1];
+        operands[osp - 1] = top;
     }
 }
 
-void stackclear(void) { sp = -1; }
+void op_stackclear(void) { osp = -1; }
 
-/* getop */
+void var_push(char v) {
+    if (vsp >= VARS_MAX_DEPTH - 1)
+        printf("var_push: error: Stack overflow\n");
+    else
+        vars[++vsp] = v;
+}
+
+char var_pop(void) {
+    if (vsp < 0) {
+        printf("var_pop: error: Stack underflow\n");
+        return 0.0;
+    } else
+        return vars[vsp--];
+}
+
+char var_stacktop(void) {
+    if (vsp < 0) {
+        printf("var_stacktop: error: Stack is empty\n");
+        return '\0';
+    } else
+        return vars[vsp];
+}
+
+boolean var_instack(char c) {
+    int i;
+
+    if (vsp < 0) {
+        printf("var_instack: error: Stack is empty\n");
+        return FALSE;
+    }
+    for (i = vsp; i >= 0; i--)
+        if (c == vars[i])
+            return TRUE;
+    return FALSE;
+}
+
+void var_stackclear(void) { vsp = -1; }
+
+/* get_token */
 
 #include <ctype.h>
 
@@ -227,12 +340,31 @@ void ungetch(int pushback_char);
  * NAME: get_function
  * PURPOSE: To get the math function used in input.
  * PARAMETERS:
- *  - void
+ *  - char buffer[]: The string buffer
  * RETURNS: Code based on the type of function.
  */
 int get_function(char buffer[]);
 
-int getop(char s[]) {
+/*
+ * NAME: get_operand
+ * PURPOSE: To get the operand in the string buffer.
+ * PARAMETERS:
+ *  - char buffer[]: The string buffer
+ *  - int curr_index: The current index into the buffer
+ * RETURNS: Nothing.
+ */
+void get_operand(char buffer[], int curr_index);
+
+/*
+ * NAME: get_var_name
+ * PURPOSE: To get the value of the variable in the buffer.
+ * PARAMETERS:
+ *  - char buffer[]: The string buffer
+ * RETURNS: Status indicating whether var name is valid or not.
+ */
+int get_var_name(char buffer[]);
+
+int get_token(char s[]) {
     int c, i;
 
     /* Skip whitespace */
@@ -242,17 +374,34 @@ int getop(char s[]) {
     i = 0;
     /* Check for operator */
     if (!isdigit(c) && c != '.') {
-        if (isalpha(c)) {
+        if (c == '$') {
+            /* '$' is used for variable expansion (like in the shell) */
+            if (isalpha(s[++i] = c = getch())) {
+                ungetch(c);
+                if (get_var_name(s) != INVALID_VAR_USAGE)
+                    return VAR_EXPAND_FOUND;
+            }
+        } else if (isalpha(c)) {
             int ftype;
 
             ungetch(c);
             if ((ftype = get_function(s)) != NO_FUNC_FOUND)
                 return ftype;
-            return VARIABLE_FOUND;
-        } else if (c != '-') {
+            /* Handle errors related to invalid variable use */
+            while ((c = getch()) == ' ' || c == '\t')
+                if ((c = getch()) != '=') {
+                    /* If first non-whitespace token is not '=', error */
+                    ungetch(c);
+                    return INVALID_VAR_USAGE;
+                } else {
+                    /* A single letter variable is found */
+                    ungetch(c);
+                    return VAR_ASSIGN_FOUND;
+                }
+        } else if (c != '-')
             /* Handle negative numbers */
             return c;
-        } else if (c == '-' && !isdigit(s[++i] = c = getch())) {
+        else if (c == '-' && !isdigit(s[++i] = c = getch())) {
             /* Terminate the string buffer */
             s[i] = '\0';
             /* Push the extra character back */
@@ -264,15 +413,7 @@ int getop(char s[]) {
     }
     /* Put the number (possibly fractional) into the buffer */
     if (isdigit(c))
-        while (isdigit(s[++i] = c = getch()))
-            ;
-    if (c == '.')
-        while (isdigit(s[++i] = c = getch()))
-            ;
-    s[i] = '\0';
-    /* Pur back the extra character read to determine end of an operand */
-    if (c != EOF)
-        ungetch(c);
+        get_operand(s, i);
 
     return NUMBER_FOUND;
 }
@@ -294,8 +435,42 @@ int get_function(char s[]) {
         else if (i - 2 >= 0 && s[i - 2] == 'c' && s[i - 1] == 'o' &&
                  s[i] == 's')
             return COS_FOUND;
+        else if (i - 2 >= 0 && s[i - 2] == 'e' && s[i - 1] == 'x' &&
+                 s[i] == 'p')
+            return EXP_FOUND;
     return NO_FUNC_FOUND;
 }
+
+void get_operand(char s[], int i) {
+    int c;
+
+    while (isdigit(s[++i] = c = getch()))
+        ;
+    if (c == '.')
+        while (isdigit(s[++i] = c = getch()))
+            ;
+    s[i] = '\0';
+    /* Pur back the extra character read to determine end of an operand */
+    if (c != EOF)
+        ungetch(c);
+}
+
+int get_var_name(char s[]) {
+    int c;
+    int i = 0;
+
+    while (i < 1 && isalpha(s[i++] = c = getch()))
+        ;
+    s[i] = '\0';
+    ungetch(c);
+
+    if (i != 1)
+        return INVALID_VAR_USAGE;
+    else
+        return VAR_EXPAND_FOUND;
+}
+
+/* buffer.c */
 
 #define BUFSIZE 100
 
