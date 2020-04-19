@@ -13,14 +13,17 @@
 #define NUMBER_FOUND '0'
 #define VAR_ASSIGN_FOUND '1'
 #define VAR_EXPAND_FOUND '2'
-#define INVALID_VAR_USAGE '3'
-#define NO_FUNC_FOUND '4'
-#define SIN_FOUND '5'
-#define COS_FOUND '6'
-#define EXP_FOUND '7'
+#define ANS_EXPAND_FOUND '3'
+#define INVALID_VAR_USAGE '4'
+#define NO_FUNC_FOUND '5'
+#define SIN_FOUND '6'
+#define COS_FOUND '7'
+#define EXP_FOUND '8'
 
 typedef enum { FALSE, TRUE } boolean;
 
+/* Special storage for the last printed answer */
+double ans;
 /* The array to store values of variables */
 double storage[STORAGE_MAXLEN];
 
@@ -143,6 +146,9 @@ int main(void) {
         case NUMBER_FOUND:
             op_push(atof(strbuf));
             break;
+        case ANS_EXPAND_FOUND:
+            op_push(ans);
+            break;
         case VAR_EXPAND_FOUND:
             /* During expansion, 'strbuf' holds a single letter variable */
             if (var_instack(strbuf[0]))
@@ -203,7 +209,7 @@ int main(void) {
             op_push(storage[var_stacktop() - 'a'] = op_pop());
             break;
         case '\n':
-            printf("\t%.8g\n", op_pop());
+            printf("\t%.8g\n", (ans = op_pop()));
             break;
         default:
             printf("calculator: Unknown command '%s'\n", strbuf);
@@ -314,6 +320,7 @@ void var_stackclear(void) { vsp = -1; }
 /* get_token */
 
 #include <ctype.h>
+#include <string.h>
 
 #define FUNC_BUF_SIZE 10
 
@@ -459,18 +466,26 @@ int get_var_name(char s[]) {
     int c;
     int i = 0;
 
-    while (i < 1 && isalpha(s[i++] = c = getch()))
+    while (i < 3 && isalpha(s[i++] = c = getch()))
         ;
     s[i] = '\0';
     ungetch(c);
 
-    if (i != 1)
-        return INVALID_VAR_USAGE;
-    else
+    if (i == 1)
         return VAR_EXPAND_FOUND;
+    else if (i == 3) {
+        if (s[0] == 'a' && s[1] == 'n' && s[2] == 's')
+            return ANS_EXPAND_FOUND;
+        else {
+            for (i = 0; s[i] != '\0'; i++)
+                ungetch(s[i]);
+            return INVALID_VAR_USAGE;
+        }
+    } else
+        return INVALID_VAR_USAGE;
 }
 
-/* buffer.c */
+/* buffer */
 
 #define BUFSIZE 100
 
