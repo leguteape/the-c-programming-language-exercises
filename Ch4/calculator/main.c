@@ -27,6 +27,8 @@ double ans;
 /* The array to store values of variables */
 double storage[STORAGE_MAXLEN];
 
+/* token.h */
+
 /*
  * NAME: get_token
  * PURPOSE: To fetch an operator char directly or an operand in the buffer.
@@ -35,6 +37,8 @@ double storage[STORAGE_MAXLEN];
  * RETURNS: Either the operator itself, or a signal to indicate an operand.
  */
 int get_token(char buffer[]);
+
+/* stack.h */
 
 /*
  * NAME: op_push
@@ -227,7 +231,7 @@ int main(void) {
     return 0;
 }
 
-/* stack */
+/* stack.c */
 
 #define OPERANDS_MAX_DEPTH 100
 #define VARS_MAX_DEPTH 100
@@ -323,7 +327,7 @@ boolean var_instack(char c) {
 
 void var_stackclear(void) { vsp = -1; }
 
-/* get_token */
+/* buffer.h */
 
 #define FUNC_BUF_SIZE 10
 
@@ -341,10 +345,21 @@ int getch(void);
  * NAME: ungetch
  * PURPOSE: To push a character back to the push-back buffer.
  * PARAMETERS:
- *  - void pushback_char: The character to push back
+ *  - int pushback_char: The character to push back
  * RETURNS: Nothing.
  */
 void ungetch(int pushback_char);
+
+/*
+ * NAME: ungets
+ * PURPOSE: To push an entire string back to input.
+ * PARAMETERS:
+ *  - char pushback_str[]: The string to push back
+ * RETURNS: Nothing.
+ */
+void ungets(char pushback_str[]);
+
+/* token.h */
 
 /*
  * NAME: get_function
@@ -373,6 +388,8 @@ void get_operand(char buffer[], int curr_index);
  * RETURNS: Status indicating whether var name is valid or not.
  */
 int get_var_name(char buffer[]);
+
+/* token.c */
 
 #include <ctype.h>
 #include <string.h>
@@ -490,7 +507,7 @@ int get_var_name(char s[]) {
     }
 }
 
-/* buffer */
+/* buffer.c */
 
 #define BUFSIZE 100
 
@@ -504,4 +521,16 @@ void ungetch(int ch) {
         printf("ungetch: error: Buffer overflow\n");
     else
         buffer[bufp++] = ch;
+    printf("Buf len = %d\n", bufp);
+}
+
+void ungets(char s[]) {
+    int i;
+
+    for (i = 0; s[i] != '\n' && s[i] != '\0'; i++)
+        if (bufp >= BUFSIZE) {
+            printf("ungets: error: Buffer overflow\n");
+            break;
+        } else
+            buffer[bufp++] = s[i];
 }
