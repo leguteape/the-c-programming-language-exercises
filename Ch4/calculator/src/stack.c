@@ -6,10 +6,10 @@
 #define OPERANDS_MAX_DEPTH 100
 #define VARS_MAX_DEPTH 100
 
-int osp = -1; /* -1 indicates empty stack */
-int vsp = -1;
-double operands[OPERANDS_MAX_DEPTH];
-char vars[VARS_MAX_DEPTH];
+static int osp = -1; /* -1 indicates empty stack */
+static int vsp = -1;
+static double operands[OPERANDS_MAX_DEPTH];
+static char vars[VARS_MAX_DEPTH];
 
 void op_push(double f) {
     if (osp >= OPERANDS_MAX_DEPTH - 1)

@@ -6,12 +6,12 @@
 #define BUFSIZE 100
 
 /* Push back implementation for 'getch' and 'ungetch' */
-char pushed_char;
-boolean pushback = FALSE;
+static char pushed_char;
+static boolean pushback = FALSE;
 
 /* Push back implementation for 'ungets' */
-char buffer[BUFSIZE];
-int bufp = 0;
+static char buffer[BUFSIZE];
+static int bufp = 0;
 
 int getch(void) {
     if (pushback) {
