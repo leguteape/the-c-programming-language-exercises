@@ -46,15 +46,15 @@ char *trim(char *s) {
     return s;
 }
 
-int get_line(char s[], int lim) {
+size_t get_line(char *s, int lim) {
     int c;
-    int index = 0;
+    char *p = s;
 
     while (--lim > 0 && (c = getchar()) != EOF && c != '\n')
-        s[index++] = c;
+        *p++ = c;
     if (c == '\n')
-        s[index++] = c;
-    s[index] = '\0';
+        *p++ = c;
+    *p = '\0';
 
-    return index;
+    return p - s;
 }
