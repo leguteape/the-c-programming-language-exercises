@@ -1,5 +1,5 @@
-#ifndef STRUTILS_H_
-#define STRUTILS_H_
+#ifndef INCLUDE_STRUTILS_H_
+#define INCLUDE_STRUTILS_H_
 
 /*
  * NAME: length
@@ -38,6 +38,6 @@ char *trim(char *line);
  *      - int maxlen: The maximum length of the buffer
  * RETURNS: Length of the input line (or zero for EOF)
  */
-int get_line(char line[], int maxlen);
+int get_line(char *line, int maxlen);
 
-#endif
+#endif // INCLUDE_STRUTILS_H_
