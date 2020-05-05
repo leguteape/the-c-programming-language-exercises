@@ -92,19 +92,22 @@ void writelines(char *lineptrs[], int nlines) {
 #define MAXLEN 1000
 
 int readlines(char *lineptrs[], int maxlines, char *buf, int bufsize) {
-    int nlines, len, bsize;
+    int nlines, len;
+    char *p;
     char line[MAXLEN];
 
-    nlines = 0, bsize = 0;
+    nlines = 0;
     while ((len = get_line(line, MAXLEN)) > 0)
-        if (nlines >= maxlines || bsize >= bufsize)
+        if (nlines >= maxlines || (p = alloc(len)) == NULL)
             return -1;
         else {
             line[len - 1] = '\0'; /* Remove the trailing newline */
-            strcpy(buf, line);
-            lineptrs[nlines++] = buf;
-            buf += len;
-            bsize += len;
+            strcpy(p, line);
+            lineptrs[nlines++] = p;
+            /*
+             * buf += len;
+             * bsize += len;
+             */
         }
     return nlines;
 }
