@@ -1,5 +1,5 @@
-#ifndef INCLUDE_STACK_H_
-#define INCLUDE_STACK_H_
+#ifndef STACK_H_
+#define STACK_H_
 
 #include <stdbool.h>
 
@@ -68,4 +68,4 @@ char pop(Stack *stk);
  */
 char stacktop(Stack *stk);
 
-#endif // INCLUDE_STACK_H_
+#endif

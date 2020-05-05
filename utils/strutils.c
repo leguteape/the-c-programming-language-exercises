@@ -46,7 +46,7 @@ char *trim(char *s) {
     return s;
 }
 
-int get_line(char *s, int lim) {
+size_t get_line(char *s, int lim) {
     int c;
     char *p = s;
 
