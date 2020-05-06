@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <time.h>
 
 #define MAXLINES 5000
 #define BUFSIZE 10000
@@ -46,12 +45,7 @@ int main(void) {
     char buffer[BUFSIZE];
     char *lineptrs[MAXLINES];
 
-    clock_t begin = clock();
-    nlines = readlines(lineptrs, MAXLINES, buffer, BUFSIZE);
-    clock_t end = clock();
-    printf("Took %g sec to read input.\n",
-           (double)(end - begin) / CLOCKS_PER_SEC);
-    if ((nlines) >= 0) {
+    if ((nlines = readlines(lineptrs, MAXLINES, buffer, BUFSIZE)) >= 0) {
         quicksort(lineptrs, 0, nlines - 1);
         writelines(lineptrs, nlines);
         return 0;
@@ -86,7 +80,6 @@ void writelines(char *lineptrs[], int nlines) {
         printf("%s\n", *lineptrs++);
 }
 
-#include "../include/allocator.h"
 #include "../include/strutils.h"
 
 #define MAXLEN 1000
