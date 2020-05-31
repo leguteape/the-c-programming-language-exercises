@@ -64,12 +64,10 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
     if (argc != 0) {
         fprintf(stderr, "Usage: entab [options]\n");
         return 1;
     }
-
     if (ntabs == 0)
         tabstops[ntabs++] = DEFAULT_TABSTOP;
 
