@@ -85,50 +85,60 @@ int main(int argc, char *argv[]) {
  * RETURNS: Nothing
  */
 void entab(char s[], int n, int ts[], int tslen) {
-    int i, j, index;
+    int i, j, tabi;
     int nspace;
     Boolean done = FALSE;
+    int tabstop = 0; /* To keep track of the current tab stop value */
 
-    for (i = 0, nspace = 0; !done && i < n; ++i) {
+    for (i = 0, nspace = 0, tabi = 0; !done && i < n; ++i) {
         /* Whenever a space char is found, increase contd space counter.
          * Then check to see if any more space characters exist */
-        if (s[i] != ' ')
-            break;
+        if (s[i] != ' ') {
+            if (tslen > 1)
+                break;
+            else
+                continue;
+        }
 
         ++nspace;
+
+        if (tslen > 1)
+            tabstop = ts[tabi];
+        else
+            tabstop += ts[tabi];
         /* Here, we group a continuous string of spaces (if it exists),
          * into chunks, each of which is at most 'ts' spaces wide */
-        for (j = 0; !done && j < tslen; j++) {
-            for (index = i + 1; index < n && nspace < ts[j] && s[index] == ' ';
-                 ++index)
-                /* Increase the continuous space counter if more spaces
-                 * are found immediately after the last space */
-                ++nspace;
-            if (s[index] != ' ')
-                done = TRUE;
-            if (nspace == ts[j]) {
-                int k;
+        for (j = i + 1; j < n && nspace < tabstop && s[j] == ' '; ++j)
+            /* Increase the continuous space counter if more spaces
+             * are found immediately after the last space */
+            ++nspace;
+        if (tslen > 1 && s[j] != ' ')
+            done = TRUE;
+        if (nspace == tabstop) {
+            int k;
 
-                /* If 'ts' continuous spaces are found,
-                 * shift each char by 'ts - 1' places to the left */
-                for (k = index; k < n; ++k)
-                    if (j > 0)
-                        s[k - ts[j] + ts[j - 1] + 1] = s[k];
-                    else
-                        s[k - ts[j] + 1] = s[k];
-                if (j > 0) {
-                    s[++i] = '\t';
-                    /* Reduce string length and terminate the new string */
-                    n -= ts[j] - ts[j - 1] - 1;
-                } else {
-                    s[i] = '\t';
-                    /* Reduce string length and terminate the new string */
-                    n -= ts[j] - 1;
-                }
-                s[n] = '\0';
-                if (j == tslen - 1)
-                    done = TRUE;
-            }
+            /* If 'ts' continuous spaces are found,
+             * shift each char by 'ts - 1' places to the left */
+            for (k = j; k < n; ++k)
+                if (tabi > 0)
+                    s[k - ts[tabi] + ts[tabi - 1] + 1] = s[k];
+                else
+                    s[k - ts[tabi] + 1] = s[k];
+            s[i] = '\t';
+            if (tabi > 0)
+                /* Reduce string length and terminate the new string */
+                n -= ts[tabi] - ts[tabi - 1] - 1;
+            else
+                /* Reduce string length and terminate the new string */
+                n -= ts[tabi] - 1;
+        }
+        s[n] = '\0';
+
+        if (tslen != 1) {
+            if (tabi == tslen - 1)
+                done = TRUE;
+            else
+                tabi++;
         }
     }
 }
