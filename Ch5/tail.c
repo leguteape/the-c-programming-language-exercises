@@ -9,7 +9,7 @@
 
 #include "../include/strutils.h"
 
-#define MAXLINES 1000
+#define MAXLINES 5000
 #define MAXLEN 1000
 #define DEFAULT_N 10
 
@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
          nlines++) {
         p = malloc(len + 1);
         strcpy(p, line);
-        p[len] = '\0';
         linetab[nlines] = p;
     }
     for (i = nlines - n; i < nlines; i++)
