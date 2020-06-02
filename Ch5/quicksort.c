@@ -3,20 +3,112 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #define MAXLINES 5000
 #define BUFSIZE 10000
+
+typedef enum { FALSE, TRUE } Boolean;
+
+void quicksort(void *lineptr[], int left, int right,
+               int (*comp)(void *, void *));
+
+void writelines(char *lineptrs[], int nlines);
+int readlines(char *lineptrs[], int maxlines, char *buffer, int bufsize);
+
+int numcmp(const char *, const char *);
+int fold_strcmp(const char *, const char *);
+int directory_fold_strcmp(const char *, const char *);
+int reverse_numcmp(const char *, const char *);
+int reverse_strcmp(const char *, const char *);
+int reverse_fold_strcmp(const char *, const char *);
+
+int main(int argc, char *argv[]) {
+    int nlines;
+    char buffer[BUFSIZE];
+    char *lineptrs[MAXLINES];
+    void *compare_func;
+    Boolean number = FALSE, reverse = FALSE;
+    Boolean directory_order = FALSE, fold = FALSE;
+
+    while (--argc > 0 && (*++argv)[0]) {
+        int c;
+
+        while ((c = *++argv[0])) {
+            switch (c) {
+            case 'n':
+                number = TRUE;
+                break;
+            case 'r':
+                reverse = TRUE;
+                break;
+            case 'f':
+                fold = TRUE;
+                break;
+            case 'd':
+                directory_order = TRUE;
+                break;
+            default:
+                fprintf(stderr, "quicksort: invalid option '%c'\n", c);
+                return 1;
+            }
+        }
+    }
+
+    if (argc != 0) {
+        fprintf(stderr, "Usage: quicksort [OPTIONS]");
+        return 2;
+    }
+
+    if (number)
+        compare_func = reverse ? reverse_numcmp : numcmp;
+    else if (fold)
+        if (directory_order)
+            compare_func = directory_fold_strcmp;
+        else
+            compare_func = reverse ? reverse_fold_strcmp : fold_strcmp;
+    else if (directory_order)
+        compare_func = directory_fold_strcmp;
+    else
+        compare_func = reverse ? reverse_strcmp : strcmp;
+
+    if ((nlines = readlines(lineptrs, MAXLINES, buffer, BUFSIZE)) >= 0) {
+        quicksort((void **)lineptrs, 0, nlines - 1,
+                  (int (*)(void *, void *))compare_func);
+        writelines(lineptrs, nlines);
+        return 0;
+    } else {
+        printf("error: Input too big to sort\n");
+        return 3;
+    }
+}
 
 /*
  * NAME: quicksort
  * PURPOSE: To sort an array of lines using quicksort algorithm.
  * PARAMETERS:
- *  = char *lines[]: An array of pointers to lines
+ *  = char *lineptr[]: An array of pointers to lines
  *  - int left: The start index of the sub-array to sort
  *  - int right: The end index of the sub-array to sort, inclusive
  * RETURNS: Nothing.
  */
-void quicksort(char *lines[], int left, int right);
+void quicksort(void *v[], int left, int right, int (*comp)(void *, void *)) {
+    int pivot, i;
+    void swap(void *array[], int left, int right);
+
+    if (left >= right)
+        return;
+
+    swap(v, left, (left + right) / 2);
+    pivot = left;
+    for (i = left + 1; i <= right; i++)
+        if ((*comp)(v[i], v[left]) < 0)
+            swap(v, ++pivot, i);
+    swap(v, pivot, left);
+
+    quicksort(v, left, pivot - 1, comp);
+    quicksort(v, pivot + 1, right, comp);
+}
 
 /*
  * NAME: writelines
@@ -26,7 +118,14 @@ void quicksort(char *lines[], int left, int right);
  *  - int nlines: The number of lines in the array
  * RETURNS: Nothing.
  */
-void writelines(char *lineptrs[], int nlines);
+void writelines(char *lineptrs[], int nlines) {
+    while (--nlines >= 0)
+        printf("%s\n", *lineptrs++);
+}
+
+#include "../include/strutils.h"
+
+#define MAXLEN 1000
 
 /*
  * NAME: readlines
@@ -38,52 +137,6 @@ void writelines(char *lineptrs[], int nlines);
  *  - int bufsize: Size of the buffer
  * RETURNS: The number of lines read on success, -1 on failure.
  */
-int readlines(char *lineptrs[], int maxlines, char *buffer, int bufsize);
-
-int main(void) {
-    int nlines;
-    char buffer[BUFSIZE];
-    char *lineptrs[MAXLINES];
-
-    if ((nlines = readlines(lineptrs, MAXLINES, buffer, BUFSIZE)) >= 0) {
-        quicksort(lineptrs, 0, nlines - 1);
-        writelines(lineptrs, nlines);
-        return 0;
-    } else {
-        printf("error: Input too big to sort\n");
-        return -1;
-    }
-}
-
-#include <string.h>
-
-void quicksort(char *v[], int left, int right) {
-    int pivot, i;
-    void swap(char *array[], int left, int right);
-
-    if (left >= right)
-        return;
-
-    swap(v, left, (left + right) / 2);
-    pivot = left;
-    for (i = left + 1; i <= right; i++)
-        if (strcmp(v[i], v[left]) < 0)
-            swap(v, ++pivot, i);
-    swap(v, pivot, left);
-
-    quicksort(v, left, pivot - 1);
-    quicksort(v, pivot + 1, right);
-}
-
-void writelines(char *lineptrs[], int nlines) {
-    while (--nlines >= 0)
-        printf("%s\n", *lineptrs++);
-}
-
-#include "../include/strutils.h"
-
-#define MAXLEN 1000
-
 int readlines(char *lineptrs[], int maxlines, char *buf, int bufsize) {
     int nlines, len, bsize;
     char line[MAXLEN];
@@ -112,8 +165,46 @@ int readlines(char *lineptrs[], int maxlines, char *buf, int bufsize) {
  * RETURNS: Nothing.
  * SIDE EFFECTS: Mutates the given array.
  */
-void swap(char *v[], int i, int j) {
+void swap(void *v[], int i, int j) {
     char *temp = v[i];
     v[i] = v[j];
     v[j] = temp;
 }
+
+#include <stdlib.h>
+
+int numcmp(const char *s1, const char *s2) {
+    int v1, v2;
+
+    v1 = atof(s1);
+    v2 = atof(s2);
+    if (v1 < v2)
+        return -1;
+    else if (v1 > v2)
+        return 1;
+    else
+        return 0;
+}
+
+int reverse_numcmp(const char *s1, const char *s2) {
+    int v1, v2;
+
+    v1 = atof(s1);
+    v2 = atof(s2);
+    if (v1 > v2)
+        return -1;
+    else if (v1 < v2)
+        return 1;
+    else
+        return 0;
+}
+
+int reverse_strcmp(const char *s1, const char *s2) { return strcmp(s2, s1); }
+
+#include <ctype.h>
+
+int fold_strcmp(const char *s1, const char *s2) {}
+
+int reverse_fold_strcmp(const char *s1, const char *s2) {}
+
+int directory_fold_strcmp(const char *s1, const char *s2) {}
