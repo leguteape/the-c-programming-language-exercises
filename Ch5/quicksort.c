@@ -18,6 +18,7 @@ int readlines(char *lineptrs[], int maxlines, char *buffer, int bufsize);
 
 int numcmp(const char *, const char *);
 int fold_strcmp(const char *, const char *);
+int directory_strcmp(const char *, const char *);
 int directory_fold_strcmp(const char *, const char *);
 int reverse_numcmp(const char *, const char *);
 int reverse_strcmp(const char *, const char *);
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]) {
         else
             compare_func = reverse ? reverse_fold_strcmp : fold_strcmp;
     else if (directory_order)
-        compare_func = directory_fold_strcmp;
+        compare_func = directory_strcmp;
     else
         compare_func = reverse ? reverse_strcmp : strcmp;
 
@@ -173,6 +174,16 @@ void swap(void *v[], int i, int j) {
 
 #include <stdlib.h>
 
+/*
+ * NAME: numcmp
+ * PURPOSE: To compare two stringified numbers.
+ * PARAMETERS:
+ *  - const char *s1: The first stringified number
+ *  - const char *s2: The second stringified number
+ * RETURNS: -1; if s1 < s2
+ *           1; if s1 > s2
+ *           0; otherwise.
+ */
 int numcmp(const char *s1, const char *s2) {
     int v1, v2;
 
@@ -186,6 +197,16 @@ int numcmp(const char *s1, const char *s2) {
         return 0;
 }
 
+/*
+ * NAME: reverse_numcmp
+ * PURPOSE: To compare two stringified numbers.
+ * PARAMETERS:
+ *  - const char *s1: The first stringified number
+ *  - const char *s2: The second stringified number
+ * RETURNS:  1; if s1 < s2
+ *          -1; if s1 > s2
+ *           0; otherwise.
+ */
 int reverse_numcmp(const char *s1, const char *s2) {
     int v1, v2;
 
@@ -199,12 +220,119 @@ int reverse_numcmp(const char *s1, const char *s2) {
         return 0;
 }
 
+/*
+ * NAME: reverse_strcmp
+ * PURPOSE: To compare two strings.
+ * PARAMETERS:
+ *  - const char *s1: The first stringified number
+ *  - const char *s2: The second stringified number
+ * RETURNS:  1; if s1 < s2
+ *          -1; if s1 > s2
+ *           0; otherwise.
+ */
 int reverse_strcmp(const char *s1, const char *s2) { return strcmp(s2, s1); }
 
 #include <ctype.h>
 
-int fold_strcmp(const char *s1, const char *s2) {}
+/*
+ * NAME: fold_strcmp
+ * PURPOSE: To compare two strings case-insensitively.
+ * PARAMETERS:
+ *  - const char *s1: The first string
+ *  - const char *s2: The second string
+ * RETURNS: -1; if s1 < s2
+ *           1; if s1 > s2
+ *           0; otherwise.
+ */
+int fold_strcmp(const char *s1, const char *s2) {
+    char *p1, *p2, *p;
+    int result;
 
-int reverse_fold_strcmp(const char *s1, const char *s2) {}
+    p = p1 = malloc(strlen(s1) + 1);
+    while ((*p = toupper(*s1++)))
+        p++;
+    p = p2 = malloc(strlen(s2) + 1);
+    while ((*p = toupper(*s2++)))
+        p++;
+    result = strcmp(p1, p2);
 
-int directory_fold_strcmp(const char *s1, const char *s2) {}
+    free(p1);
+    free(p2);
+    return result;
+}
+
+/*
+ * NAME: reverse_fold_strcmp
+ * PURPOSE: To compare two strings case-insensitively.
+ * PARAMETERS:
+ *  - const char *s1: The first string
+ *  - const char *s2: The second string
+ * RETURNS:  1; if s1 < s2
+ *          -1; if s1 > s2
+ *           0; otherwise.
+ */
+int reverse_fold_strcmp(const char *s1, const char *s2) {
+    return fold_strcmp(s2, s1);
+}
+
+/*
+ * NAME: directory_fold_strcmp
+ * PURPOSE: To compare two strings in directory-order.
+ * PARAMETERS:
+ *  - const char *s1: The first string
+ *  - const char *s2: The second string
+ * RETURNS: -1; if s1 < s2
+ *           1; if s1 > s2
+ *           0; otherwise.
+ */
+int directory_strcmp(const char *s1, const char *s2) {
+    char *p1, *p2, *p;
+    int result;
+
+    p1 = malloc(strlen(s1) + 1);
+    for (p = p1; *s1; s1++)
+        if (isalnum(*s1) || *s1 == ' ' || *s1 == '\t')
+            *p++ = *s1;
+    *p = '\0';
+    p2 = malloc(strlen(s2) + 1);
+    for (p = p2; *s2; s2++)
+        if (isalnum(*s2) || *s2 == ' ' || *s2 == '\t')
+            *p++ = *s2;
+    *p = '\0';
+    result = strcmp(p1, p2);
+
+    free(p1);
+    free(p2);
+    return result;
+}
+
+/*
+ * NAME: directory_fold_strcmp
+ * PURPOSE: To compare two strings case-insensitively, in directory-order.
+ * PARAMETERS:
+ *  - const char *s1: The first string
+ *  - const char *s2: The second string
+ * RETURNS: -1; if s1 < s2
+ *           1; if s1 > s2
+ *           0; otherwise.
+ */
+int directory_fold_strcmp(const char *s1, const char *s2) {
+    char *p1, *p2, *p;
+    int result;
+
+    p1 = malloc(strlen(s1) + 1);
+    for (p = p1; *s1; s1++)
+        if (isalnum(*s1) || *s1 == ' ' || *s1 == '\t')
+            *p++ = toupper(*s1);
+    *p = '\0';
+    p2 = malloc(strlen(s2) + 1);
+    for (p = p2; *s2; s2++)
+        if (isalnum(*s2) || *s2 == ' ' || *s2 == '\t')
+            *p++ = toupper(*s2);
+    *p = '\0';
+    result = strcmp(p1, p2);
+
+    free(p1);
+    free(p2);
+    return result;
+}
