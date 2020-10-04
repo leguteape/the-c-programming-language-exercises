@@ -14,7 +14,7 @@ endif()
 
 add_compile_options(-W -Wall -Wextra -g -fdiagnostics-color=always)
 
-add_executable(calculator src/main.c src/stack.c src/token.c)
+add_executable(calculator src/main.c src/stack.c src/token.c);
 target_include_directories(calculator PRIVATE include)
 target_link_options(calculator PRIVATE -lm)
 
