@@ -13,7 +13,7 @@
  * PURPOSE: To convert an integer to string.
  * PARAMETERS:
  *  - int number: The number to convert to string
- *  = char string[]: The string buffer
+ *  - char string[]: The string buffer
  * RETURNS: Nothing.
  */
 void itoa_recursive(int number, char string[]);
