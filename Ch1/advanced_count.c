@@ -17,7 +17,8 @@ int main(void) {
             ++nother;
 
     printf("digits =");
-    for (int i = 0; i < 10; i++) printf(" %d", ndigits[i]);
+    for (int i = 0; i < 10; i++)
+        printf(" %d", ndigits[i]);
     printf(", whitespaces = %d, others = %d\n", nwhite, nother);
 
     return 0;
